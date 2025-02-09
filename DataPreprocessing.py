@@ -9,7 +9,7 @@ class PreprocessingDataset:
 
     def carica_dataset(self) -> pd.DataFrame:
         '''
-        Questa funzione permette di caricare il dataset CSV, mostrando in output
+        Questo metodo permette di caricare il dataset CSV, mostrando in output
         un messaggio che specifica se il caricamento del dataset è avvenuto con 
         successo o meno.
         
@@ -31,11 +31,12 @@ class PreprocessingDataset:
         Questo metodo pulisce il dataset in questo modo:
         1) Converte i valori numerici in formato stringa in formato numerico.
             I valori non numerici vengono trasformati in NaN (Not a Number).
-        2) Divide il dataset in feature (X) e target (y).
-        3) Sostituisce i valori mancanti (NaN) con la media della colonna per le feature.
-        4) Rimuove eventuali righe duplicate.
-        5) Rimuove righe NaN in y e le corrispondenti in X.
+        2) Rimuove righe NaN in y e le corrispondenti in X.
+        3) Rimuove eventuali righe duplicate.
+        4) Separazione delle feature (X) e del target (y).
+        5) Sostituisce i valori mancanti (NaN) con la media della colonna per le feature.
         6) Stampa il numero di valori mancanti prima e dopo la pulizia.
+        7) Restituisce feature e target puliti.
         
         Returns
         -------
@@ -50,24 +51,27 @@ class PreprocessingDataset:
         dataset_clean = self.dataset.apply(pd.to_numeric, errors='coerce')
         print("\nValori mancanti prima della pulizia:")
         print(dataset_clean.isnull().sum())
+
+
+        # Punto 2: Rimozione delle righe con NaN in y
+        dataset_clean.dropna(subset=["classtype_v1"], inplace=True)
+
+        # Punto 3: Rimozione delle righe duplicate
+        dataset_clean.drop_duplicates(inplace=True)
         
-        # Punto 2: Separazione feature (X) e target (y)
+        # Punto 4: Separazione feature (X) e target (y)
         (self.x, self.y) = self.separa_features_e_target(dataset_clean)
         
-        # Punto 3: Sostituzione dei NaN nelle feature con la media della colonna
+        # Punto 5: Sostituzione dei NaN nelle feature con la media della colonna
         self.x.fillna(self.x.mean(numeric_only=True), inplace=True)
         
-        # Punto 4: Rimozione delle righe duplicate
-        dataset_clean = pd.concat([self.x, self.y], axis=1).drop_duplicates()
-        
-        # Punto 5: Rimozione delle righe con NaN in y
-        dataset_clean.dropna(subset=["classtype_v1"], inplace=True)
-        
         # Punto 6: Stampo i valori mancanti dopo la pulizia
-        print("\nValori mancanti dopo la pulizia:")
-        print(dataset_clean.isnull().sum())
-        
-        return dataset_clean
+        print("\nValori delle feature mancanti dopo la pulizia:")
+        print(self.x.isnull().sum())
+
+        print("\nValori delle labels mancanti dopo la pulizia:")
+        print(self.y.isnull().sum())
+        return self.x, self.y
 
     def separa_features_e_target(self, dataset_pulito: pd.DataFrame) -> tuple:
         '''
