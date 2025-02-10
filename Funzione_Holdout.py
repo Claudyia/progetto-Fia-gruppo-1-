@@ -21,6 +21,10 @@ def holdout_method(x: pd.DataFrame, y: pd.DataFrame, dim_test_set = 0.2) -> tupl
     x_train, x_test, y_train, y_test : tuple di DataFrame
         Le features e i rispettivi target divisi in training e test set.
     """
+    # Verifico che dim_test_set sia valido
+    if not (0 < dim_test_set < 1):
+        raise ValueError("Errore: dim_test_set deve essere un valore tra 0 e 1.")
+
 
     # Numero totale di campioni (ovvero numero tot di righe)
     num_campioni = x.shape[0]
