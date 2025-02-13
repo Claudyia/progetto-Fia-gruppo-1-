@@ -1,5 +1,7 @@
 from DataPreprocessing import PreprocessingDataset
+from knn import KNN
 from Kfold_CrossValidation import KfoldCrossValidationKNN
+from HoldOut import HoldOut
 
 if __name__ == "__main__":
     # Creiamo un'istanza della classe
@@ -23,13 +25,26 @@ if __name__ == "__main__":
     else:
         metodo = int(input(
         "Scegliere il metodo (digitando '1', '2' o '3') che si vuole usare per la KNN:\n"
-        "1. Holdout (Non Disponibile)\n"
+        "1. Holdout\n"
         "2. K-fold Cross Validation\n"
         "3. Random Subsampling (Non Disponibile)\n"
         ))
 
+    if (metodo == 1):
+        k = int(input("Inserisci il numero di vicini (k) per l'algoritmo KNN: "))
+        holdout = HoldOut(k)
 
-    if (metodo == 2):
+        # Valutiamo il modello
+        accuracy, error, sensitivity, specificity, geometric_mean, confusion_matrix= holdout.evaluate(x_normalizzato, y)
+
+        print(f"\nAccuracy: {accuracy*100}%")
+        print(f"Error: {error*100}%")
+        print(f"Sensitivity: {sensitivity*100}%")
+        print(f"Specificity: {specificity*100}%")
+        print(f"Geometric Mean: {geometric_mean*100}%")
+        print(f"Confusion Matrix:\n{confusion_matrix}")
+
+    elif (metodo == 2):
         k = int(input("Inserisci il numero di vicini (k) per l'algoritmo KNN: "))   
         K = int(input("Inserisci il numero di fold per la cross-validation: "))
         kfold = KfoldCrossValidationKNN(k, K)
