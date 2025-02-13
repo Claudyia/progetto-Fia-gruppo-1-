@@ -1,17 +1,16 @@
 import numpy as np
-from collections import Counter
-import random
+from knn import KNN
 
-class KfoldCrossValidationKNN:
+class KfoldCrossValidationKNN(KNN):
 
-    def __init__(self, k: int, K: int):
+    def __init__(self, k:int, K: int):
         """ Costruttore della classe """
-        self.k = k  # Numero dei vicini
+        super().__init__(k)  # Chiamata al costruttore della superclasse KNN
         self.K = K  # Numero di fold
 
-    def kfold_split(self, X, y):
+    def kfold_split(self, X):
         """ Metodo che divide e restituisce gli indici del dataset in K fold """
-        indices = np.arange(len(X))
+        indices = np.arange(len(X)) 
         fold_size = len(X) // self.K
         folds = []
 
@@ -23,31 +22,9 @@ class KfoldCrossValidationKNN:
         
         return folds
     
-    def euclidean_distance(self, x1: float, x2: float):
-        """ Metodo che calcola la distanza euclidea tra due vettori """
-        return np.sqrt(np.sum((x1 - x2) ** 2))
-    
-    def predict(self, X_train, y_train, X_test):
-        y_pred = []
-
-        for i in range(len(X_test)):
-            distances = [self.euclidean_distance(X_test.values[i], x) for x in X_train.values]
-            neighbour_indices = np.argsort(distances)[:self.k]
-            neighbour_labels = y_train.iloc[neighbour_indices].values.flatten()
-
-            label_counts = Counter(neighbour_labels)
-            max_count = max(label_counts.values())
-
-            # Trova tutte le classi con il massimo conteggio
-            top_labels = [label for label, count in label_counts.items() if count == max_count]
-
-            # Se c'è un pareggio, scegli casualmente tra le classi con lo stesso numero di voti
-            y_pred.append(int(random.choice(top_labels)))
-        return y_pred
-
     def evaluate(self, X: np.array, y: np.array):
         """ Metodo che valuta il modello"""
-        folds = self.kfold_split(X, y)
+        folds = self.kfold_split(X)
         
         accuracy = np.zeros(self.K)
         error = np.zeros(self.K)
@@ -66,7 +43,7 @@ class KfoldCrossValidationKNN:
             X_train, y_train = X.iloc[train_indices], y.iloc[train_indices]
             X_test, y_test = X.iloc[test_indices], y.iloc[test_indices]
 
-            y_pred = self.predict(X_train, y_train, X_test)
+            y_pred = self.predici(X_test, X_train, y_train)
             
             # Conversione per evitare problemi di confronto
             y_pred = np.array(y_pred, dtype=int)
