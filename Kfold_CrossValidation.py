@@ -43,7 +43,7 @@ class KfoldCrossValidationKNN(KNN):
             X_train, y_train = X.iloc[train_indices], y.iloc[train_indices]
             X_test, y_test = X.iloc[test_indices], y.iloc[test_indices]
 
-            y_pred = self.predici(X_test, X_train, y_train)
+            y_pred = self.predici(X_test, X_train, y_train) 
             
             # Conversione per evitare problemi di confronto
             y_pred = np.array(y_pred, dtype=int)

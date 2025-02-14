@@ -4,10 +4,10 @@ from Kfold_CrossValidation import KfoldCrossValidationKNN
 from HoldOut import HoldOut
 
 if __name__ == "__main__":
-    # Creiamo un'istanza della classe
+    # Creiamo un'istanza della classe"
     preprocessing = PreprocessingDataset()
     # Carico dataset
-    dataset_caricato = preprocessing.carica_dataset()
+    dataset_caricato = preprocessing.carica_dataset( )
     
     # Pulisco il dataset
     X, y = preprocessing.pulisci_dataset()
@@ -15,12 +15,12 @@ if __name__ == "__main__":
     # Normalizzo le features
     x_normalizzato = preprocessing.normalizza_features()
 
-    if (len(x_normalizzato) != len(y)):
+    if len(x_normalizzato) != len(y):
         raise ValueError("Errore: il numero di righe delle features e del target non coincide!")
     else:
         print("\nIl numero di righe delle features e del target coincide!\n")
 
-    if (len(x_normalizzato) == 0):
+    if len(x_normalizzato) == 0:
         raise ValueError("Errore: il numero di righe delle features è zero!")
     else:
         metodo = int(input(
@@ -30,12 +30,12 @@ if __name__ == "__main__":
         "3. Random Subsampling (Non Disponibile)\n"
         ))
 
-    if (metodo == 1):
+    if metodo == 1:
         k = int(input("Inserisci il numero di vicini (k) per l'algoritmo KNN: "))
         holdout = HoldOut(k)
 
         # Valutiamo il modello
-        accuracy, error, sensitivity, specificity, geometric_mean, confusion_matrix= holdout.evaluate(x_normalizzato, y)
+        accuracy, error, sensitivity, specificity, geometric_mean, confusion_matrix = holdout.evaluate(x_normalizzato, y)
 
         print(f"\nAccuracy: {accuracy*100}%")
         print(f"Error: {error*100}%")
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         print(f"Geometric Mean: {geometric_mean*100}%")
         print(f"Confusion Matrix:\n{confusion_matrix}")
 
-    elif (metodo == 2):
+    elif metodo == 2:
         k = int(input("Inserisci il numero di vicini (k) per l'algoritmo KNN: "))   
         K = int(input("Inserisci il numero di fold per la cross-validation: "))
         kfold = KfoldCrossValidationKNN(k, K)

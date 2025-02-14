@@ -48,7 +48,6 @@ class KNN():
         
         y_pred = []
         X_test_np = X_test.values
-        print(X_test_np)
         X_train_np = X_train.values
 
         for i in range(len(X_test_np)):

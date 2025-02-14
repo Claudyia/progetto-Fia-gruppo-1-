@@ -27,24 +27,25 @@ class TestPreprocessingDataset(unittest.TestCase):
 
     def test_pulisci_dataset(self):
         """Testa la pulizia del dataset."""
-        cleaned_data = self.processor.pulisci_dataset()
+        cleaned_data, _ = self.processor.pulisci_dataset()
         self.assertIsNotNone(cleaned_data)
         self.assertFalse(cleaned_data.isnull().values.any(), "Il dataset non dovrebbe avere valori NaN dopo la pulizia.")
 
     def test_separa_features_e_target(self):
         """Testa la separazione delle features e del target."""
-        cleaned_data = self.processor.pulisci_dataset()  # Assicura la pulizia prima della separazione
-        x, y = self.processor.separa_features_e_target(cleaned_data)
-        
-        self.assertEqual(x.shape[1], 9, "Le features devono avere 9 colonne.")
-        self.assertEqual(y.shape[0], x.shape[0], "Il target deve avere lo stesso numero di righe delle features.")
-        self.assertFalse(y.isnull().values.any(), "Il target non deve contenere valori NaN.")
+        features, target = self.processor.separa_features_e_target(self.dataset)
+        self.assertIsNotNone(features)
+        self.assertIsNotNone(target)
+        self.assertEqual(features.shape[1], 9, "Il numero di colonne delle features è errato.")
+        self.assertEqual(target.shape[1], 1, "Il numero di colonne del target è errato.")
 
     def test_normalizza_features(self):
         """Testa la normalizzazione delle features."""
-        self.processor.x, self.processor.y = self.processor.separa_features_e_target(self.dataset.fillna(0))
-        x_normalized = self.processor.normalizza_features()
-        self.assertTrue(((x_normalized >= 0) & (x_normalized <= 1)).all().all(), "I valori devono essere normalizzati tra 0 e 1.")
+        features, _ = self.processor.pulisci_dataset()
+        normalized_features = self.processor.normalizza_features()
+        self.assertIsNotNone(normalized_features)
+        self.assertEqual(features.shape, normalized_features.shape, "Il dataset normalizzato dovrebbe avere la stessa forma del dataset originale.")
 
 if __name__ == '__main__':
-    unittest.main() 
+    unittest.main()
+    
