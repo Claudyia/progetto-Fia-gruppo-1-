@@ -9,7 +9,7 @@ class PreprocessingDataset:
 
     def carica_dataset(self) -> pd.DataFrame:
         '''
-        Questa funzione permette di caricare il dataset CSV, mostrando in output
+        Questo metodo permette di caricare il dataset CSV, mostrando in output
         un messaggio che specifica se il caricamento del dataset è avvenuto con 
         successo o meno.
         
@@ -26,20 +26,26 @@ class PreprocessingDataset:
             return None
         return self.dataset
 
-    def pulisci_dataset(self) -> pd.DataFrame:
+    def pulisci_dataset(self) -> tuple:
         '''
         Questo metodo pulisce il dataset in questo modo:
         1) Converte i valori numerici in formato stringa in formato numerico.
             I valori non numerici vengono trasformati in NaN (Not a Number).
-        2) Divide il dataset in feature (X) e target (y).
-        3) Sostituisce i valori mancanti (NaN) con la media della colonna per le feature.
-        4) Rimuove eventuali righe duplicate.
-        5) Rimuove righe NaN in y e le corrispondenti in X.
+        2) Rimuove righe NaN in y e le corrispondenti in X.
+        3) Rimuove eventuali righe duplicate.
+        4) Separazione delle feature (X) e del target (y).
+        5) Sostituisce i valori mancanti (NaN) con la media della colonna per le feature.
         6) Stampa il numero di valori mancanti prima e dopo la pulizia.
+        7) Restituisce feature e target puliti.
         
         Returns
         -------
-        dataset_clean: Dataframe.
+        tuple
+            Una tupla contenente:
+            - x: pd.DataFrame
+                DataFrame delle features.
+            - y: pd.DataFrame
+                DataFrame del target.
         '''
         if self.dataset is None:
             print("Errore: non è stato caricato nessun dataset da pulire!")
@@ -67,7 +73,11 @@ class PreprocessingDataset:
         print("\nValori mancanti dopo la pulizia:")
         print(dataset_clean.isnull().sum())
         
-        return dataset_clean
+        # Aggiorno self.x e self.y dopo la pulizia
+        self.x = dataset_clean[self.x.columns]
+        self.y = dataset_clean[self.y.columns]
+        
+        return (self.x, self.y)
 
     def separa_features_e_target(self, dataset_pulito: pd.DataFrame) -> tuple:
         '''
@@ -131,6 +141,3 @@ class PreprocessingDataset:
         x_normalized = (self.x - self.x.min()) / (self.x.max() - self.x.min())
         print("\nFeatures normalizzate con Min-Max Scaling!\n")
         return x_normalized
-
-
-
