@@ -24,6 +24,11 @@ class KfoldCrossValidationKNN(KNN):
     
     def evaluate(self, X: np.array, y: np.array):
         """ Metodo che valuta il modello"""
+        
+        # Verifico che K sia un valore valido:
+        if self.K < 1:
+            raise ValueError("Errore: K deve essere un valore intero positivo.")
+        
         folds = self.kfold_split(X)
         
         accuracy = np.zeros(self.K)

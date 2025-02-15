@@ -3,11 +3,12 @@ from knn import KNN
 
 class HoldOut(KNN):
 
-    def __init__(self, k:int):
+    def __init__(self, k:int, dim_test_set: float):
         """ Costruttore della classe """
         super().__init__(k)  # Chiamata al costruttore della superclasse 
+        self.dim_test_set = dim_test_set  # Percentuale di dati da usare per il test set
         
-    def Holdout_split(self, X, y, dim_test_set = 0.2):
+    def Holdout_split(self, X, y):
             """
         Questo metodo divide il dataset in Training Set (80%) e Test Set (20%) usando il metodo Holdout.
 
@@ -25,11 +26,15 @@ class HoldOut(KNN):
         x_train, x_test, y_train, y_test : tuple di DataFrame
             Le features e i rispettivi target divisi in training e test set.
         """
+            # Verifico che dim_test_set sia valido:
+            if not (0 < self.dim_test_set < 1):
+                raise ValueError("Errore: dim_test_set deve essere un valore tra 0 e 1.")
+            
             # Numero totale di campioni (ovvero numero tot di righe)
             num_campioni = X.shape[0] 
 
             # Calcolo il numero di campioni da destinare al test set
-            num_campioni_test = int(num_campioni * dim_test_set) 
+            num_campioni_test = int(num_campioni * self.dim_test_set) 
 
             # Genero una permutazione casuale degli indici di tutti i campioni (senza seed fisso)
             indici = np.random.permutation(num_campioni) #genera una lista di indici

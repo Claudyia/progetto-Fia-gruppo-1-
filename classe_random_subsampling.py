@@ -6,12 +6,14 @@ from knn import KNN
 
 class RandomSubsampling(KNN): #eredita dalla classe KNN
     
-    def __init__(self, k: int):
+    def __init__(self, k: int, K:int, dim_test_set: float):
         """ Costruttore della classe """
         super().__init__(k)  # Chiamata al costruttore della superclasse (KNN)
+        self.K = K # Numero di iterazioni per il subsampling
+        self.dim_test_set = dim_test_set # Percentuale di dati da usare per il test set
         
         
-    def random_subsampling(self, X: pd.DataFrame, y: pd.DataFrame, dim_test_set=0.2, K=10) -> list:
+    def random_subsampling_split(self, X: pd.DataFrame, y: pd.DataFrame) -> list:
         """
         Divide il dataset in Training Set e Test Set usando il metodo Random Subsampling.
 
@@ -32,22 +34,22 @@ class RandomSubsampling(KNN): #eredita dalla classe KNN
             Lista contenente K tuple (X_train, y_train, X_test, y_test).
         """
         # Verifico che dim_test_set sia valido:
-        if not (0 < dim_test_set < 1):
+        if not (0 < self.dim_test_set < 1):
             raise ValueError("Errore: dim_test_set deve essere un valore tra 0 e 1.")
         
         # Verifico che K sia un valore valido:
-        if K < 1:
+        if self.K < 1:
             raise ValueError("Errore: K deve essere un valore intero positivo.")
 
         # Lista per salvare i risultati di ogni iterazione
         risultati_iterazioni = []
 
-        for i in range(K):
+        for i in range(self.K):
             # Numero totale di campioni del dataframe X
             num_campioni = X.shape[0]
 
             # Calcolo il numero di campioni da destinare al test set
-            num_campioni_test = int(num_campioni * dim_test_set)
+            num_campioni_test = int(num_campioni * self.dim_test_set)
 
             # Genero una permutazione casuale degli indici delle righe del dataframe X
             indici = np.random.permutation(num_campioni)  # Lista di indici mescolati
@@ -68,11 +70,11 @@ class RandomSubsampling(KNN): #eredita dalla classe KNN
         print("\nRandom Subsampling completato!")
         return risultati_iterazioni
     
-    def evaluate(self, X: pd.DataFrame, y: pd.DataFrame, K=10, dim_test_set=0.2):
+    def evaluate(self, X: pd.DataFrame, y: pd.DataFrame):
         """ Metodo che valuta il modello in cui è stato utilizzato Random Subsampling """
         
         # Chiamo il metodo random_subsampling():
-        risultati_iterazioni = self.random_subsampling(X, y, dim_test_set=dim_test_set, K=K) # lista di tuple (X_train, y_train, X_test, y_test)
+        risultati_iterazioni = self.random_subsampling_split(X, y) # lista di tuple (X_train, y_train, X_test, y_test)
     
         # Inizializzo le metriche:
         accuracy_totale = 0
@@ -80,8 +82,8 @@ class RandomSubsampling(KNN): #eredita dalla classe KNN
         sensitivity_totale = 0
         specificity_totale = 0
         geometric_mean_totale = 0
-        confusion_matrix_totale = np.array([[0, 0], [0, 0]])
-    
+        confusion_matrix_iterazione = []
+
         for X_train, y_train, X_test, y_test in risultati_iterazioni:
             y_pred = self.predici(X_test, X_train, y_train)  # Uso il metodo di KNN
     
@@ -110,14 +112,13 @@ class RandomSubsampling(KNN): #eredita dalla classe KNN
             geometric_mean_totale += geometric_mean
     
             # Aggiorno la Matrice di Confusione Totale
-            confusion_matrix_iterazione = np.array([[TN, FP], [FN, TP]])  # Matrice per questa iterazione
-            confusion_matrix_totale += confusion_matrix_iterazione  # Sommo tutte le matrici di confusione
+            confusion_matrix_iterazione.append(np.array([[TN, FP], [FN, TP]]))  # Matrice per questa iterazione
     
         # Calcolo la media delle metriche su tutte le iterazioni
-        accuracy_media = accuracy_totale / K
-        error_rate_media = error_rate_totale / K
-        sensitivity_media = sensitivity_totale / K
-        specificity_media = specificity_totale / K
-        geometric_mean_media = geometric_mean_totale / K
+        accuracy_media = accuracy_totale / self.K
+        error_rate_media = error_rate_totale / self.K
+        sensitivity_media = sensitivity_totale / self.K
+        specificity_media = specificity_totale / self.K
+        geometric_mean_media = geometric_mean_totale / self.K
     
-        return accuracy_media, error_rate_media, sensitivity_media, specificity_media, geometric_mean_media, confusion_matrix_totale
+        return accuracy_media, error_rate_media, sensitivity_media, specificity_media, geometric_mean_media, confusion_matrix_iterazione
