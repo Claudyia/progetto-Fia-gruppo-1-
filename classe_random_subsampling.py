@@ -94,8 +94,8 @@ class RandomSubsampling(KNN): #eredita dalla classe KNN
             # Calcolo della Matrice di Confusione:
             TP = np.sum((y_pred == 2) & (y_test == 2))  # Veri Positivi (benigni correttamente classificati)
             TN = np.sum((y_pred == 4) & (y_test == 4))  # Veri Negativi (maligni correttamente classificati)
-            FP = np.sum((y_pred == 2) & (y_test == 4))  # Falsi Positivi (maligni ma in realtà benigni)
-            FN = np.sum((y_pred == 4) & (y_test == 2))  # Falsi Negativi (benigni ma in realtà maligni)
+            FP = np.sum((y_pred == 2) & (y_test == 4))  # Falsi Positivi (benigni ma in realtà maligni)
+            FN = np.sum((y_pred == 4) & (y_test == 2))  # Falsi Negativi (maligni ma in realtà benigni)
     
             # Calcolo delle altre metriche:
             accuracy = np.sum(y_pred == y_test) / len(y_test)  
