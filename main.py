@@ -1,6 +1,11 @@
 from DataPreprocessing import PreprocessingDataset
 from knn import KNN
 from ValidationStrategies import ValidationFactory 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import Workbook 
+import seaborn as sns
 
 if __name__ == "__main__":
     # Creiamo un'istanza della classe"
@@ -59,11 +64,23 @@ if __name__ == "__main__":
     print("Geometric Mean: ", results[4]*100, "%")
     
     # Gestione della confusion matrix in base al metodo di validazione
+    confusion_matrix_values = np.array(results[5], dtype = int)
     if metodo == 1:
-        print("\nConfusion Matrix - Holdout:\n", results[5])
+        print("\nConfusion Matrix - Holdout:\n", confusion_matrix_values)
+        plt.figure(figsize=(6,4))
+        sns.heatmap(confusion_matrix_values, annot=True, fmt='d', cmap='Reds', xticklabels=["Neg", "Pos"], yticklabels=["Neg", "Pos"])
+        plt.xlabel("Predetto")
+        plt.ylabel("Reale")
+        plt.title("Matrice di Confusione")
+        plt.show()
 
     elif metodo in [2, 3]:  # K-Fold o Random Subsampling
         print("\nConfusion Matrices:")
-        for i, cm in enumerate(results[5]):
+        for i, cm in enumerate(confusion_matrix_values):
             print(f"Iteration {i + 1}:\n{cm}")
-
+            plt.figure(figsize=(6,4))
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Reds', xticklabels=["Neg", "Pos"], yticklabels=["Neg", "Pos"])
+            plt.xlabel("Predetto")
+            plt.ylabel("Reale")
+            plt.title("Matrice di Confusione")
+        plt.show()
