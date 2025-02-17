@@ -1,8 +1,6 @@
 from DataPreprocessing import PreprocessingDataset
 from knn import KNN
-from Kfold_CrossValidation import KfoldCrossValidationKNN
-from HoldOut import HoldOut
-from classe_random_subsampling import RandomSubsampling
+from ValidationStrategies import ValidationFactory 
 
 if __name__ == "__main__":
     # Creiamo un'istanza della classe"
@@ -24,71 +22,48 @@ if __name__ == "__main__":
     if len(x_normalizzato) == 0:
         raise ValueError("Errore: il numero di righe delle features è zero!")
     else:
-        metodo = int(input(
-        "Scegliere il metodo (digitando '1', '2' o '3') che si vuole usare per la KNN:\n"
-        "1. Holdout\n"
-        "2. K-fold Cross Validation\n"
-        "3. Random Subsampling\n"
-        ))
+        print("\nIl numero di righe delle features è maggiore di zero!\n")
 
+    k = int(input("Inserire il valore di k: "))
+    knn = KNN(k)
+
+    metodo = int(input(
+            "Scegliere il metodo (digitando '1', '2' o '3') che si vuole usare per la KNN:\n"
+            "1. Holdout\n"
+            "2. K-fold Cross Validation\n"
+            "3. Random Subsampling\n"
+    ))
+
+    # Creazione del metodo di validazione
     if metodo == 1:
-        k = int(input("Inserisci il numero di vicini (k) per l'algoritmo KNN: "))
-        dim_test_set = float(input("Inserisci la dimensione del test set: "))
-        holdout = HoldOut(k, dim_test_set)
-
-        # Valutiamo il modello
-        accuracy, error, sensitivity, specificity, geometric_mean, confusion_matrix = holdout.evaluate(x_normalizzato, y)
-
-        print(f"\nAccuracy: {accuracy*100}%")
-        print(f"Error: {error*100}%")
-        print(f"Sensitivity: {sensitivity*100}%")
-        print(f"Specificity: {specificity*100}%")
-        print(f"Geometric Mean: {geometric_mean*100}%")
-        print(f"Confusion Matrix:\n{confusion_matrix}")
-
+        dim_test_set = float(input("Inserire la dimensione del test set (in percentuale): "))
+        validation_method = ValidationFactory.create_validation_method(metodo, dim_test_set = dim_test_set)
     elif metodo == 2:
-        k = int(input("Inserisci il numero di vicini (k) per l'algoritmo KNN: "))   
-        K = int(input("Inserisci il numero di fold per la cross-validation: "))
-        kfold = KfoldCrossValidationKNN(k, K)
-
-        # Valutiamo il modello
-        accuracy, error, sensitivity, specificity, geometric_mean, model_accuracy, model_error, model_sensitivity, model_specificity, model_geometric_mean, confusion_matrix = kfold.evaluate(x_normalizzato, y)
-
-        print(f"\nAccuracy: {model_accuracy*100}%")
-        print(f"Error: {model_error*100}%")
-        print(f"Sensitivity: {model_sensitivity*100}%")
-        print(f"Specificity: {model_specificity*100}%")
-        print(f"Geometric Mean: {model_geometric_mean*100}%")
-
-        for idx, matrix in enumerate(confusion_matrix):
-            TN, FP = int(matrix[0, 0]), int(matrix[0, 1])
-            FN, TP = int(matrix[1, 0]), int(matrix[1, 1])
-            
-            print(f"Confusion Matrix {idx+1}:")
-            print(f"TN: {TN}, FP: {FP}")
-            print(f"FN: {FN}, TP: {TP}\n")
+        K = int(input("Inserire il numero di fold: "))
+        validation_method = ValidationFactory.create_validation_method(metodo, K=K)
     elif metodo == 3:
-        k = int(input("Inserisci il numero di vicini (k) per l'algoritmo KNN: "))
-        dim_test_set = float(input("Inserisci la dimensione del test set: "))
-        K = int(input("Inserisci il numero di iterazione per il random-subsampling: "))
-        
-        random_subsampling = RandomSubsampling(k, K, dim_test_set)
-        accuracy_media, error_rate_media, sensitivity_media, specificity_media, geometric_mean_media, confusion_matrix_iterazione = random_subsampling.evaluate(x_normalizzato, y)
+        dim_test_set = float(input("Inserire la dimensione del test set (in percentuale): "))
+        K = int(input("Inserire il numero di iterazioni per il random subsampling: "))
+        validation_method = ValidationFactory.create_validation_method(metodo, dim_test_set = dim_test_set, K = K)
+    else:
+        raise ValueError("Metodo non valido!")
 
-        print(f"\nAccuracy: {accuracy_media*100}%")
-        print(f"Error Rate: {error_rate_media*100}%")
-        print(f"Sensitivity: {sensitivity_media*100}%")
-        print(f"Specificity: {specificity_media*100}%")
-        print(f"Geometric Mean: {geometric_mean_media*100}%")
+    # Valutazione del modello
+    results = validation_method.evaluate(knn, x_normalizzato, y)
 
-        for idx, matrix in enumerate(confusion_matrix_iterazione):
-            TN, FP = int(matrix[0, 0]), int(matrix[0, 1])
-            FN, TP = int(matrix[1, 0]), int(matrix[1, 1])
-            
-            print(f"Confusion Matrix {idx+1}:")
-            print(f"TN: {TN}, FP: {FP}")
-            print(f"FN: {FN}, TP: {TP}\n")
+    print("\nRisultati della valutazione del modello:")
+    print("Accuracy: ", results[0]*100, "%")
+    print("Error: ", results[1]*100, "%")
+    print("Sensitivity: ", results[2]*100, "%")
+    print("Specificity: ", results[3]*100, "%")
+    print("Geometric Mean: ", results[4]*100, "%")
+    
+    # Gestione della confusion matrix in base al metodo di validazione
+    if metodo == 1:
+        print("\nConfusion Matrix - Holdout:\n", results[5])
 
-    else: 
-        raise ValueError("Errore: metodo non disponibile!")
+    elif metodo in [2, 3]:  # K-Fold o Random Subsampling
+        print("\nConfusion Matrices:")
+        for i, cm in enumerate(results[5]):
+            print(f"Iteration {i + 1}:\n{cm}")
 
