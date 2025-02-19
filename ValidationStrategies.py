@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 from knn import KNN
+from calcolo_metriche import MetricheFactory
 
 class ValidationFactory:
     """Factory per creare il metodo di validazione corretto."""
@@ -27,11 +28,19 @@ class ValidationStrategy(ABC):
     def evaluate(self, knn: KNN, X, y):
         pass
 
+    def compute_confusion_matrix(self, y_test, y_pred) -> np.ndarray:
+        """Calcola la Matrice di Confusione."""
+        TP = np.sum((y_pred == 2) & (y_test == 2))
+        TN = np.sum((y_pred == 4) & (y_test == 4))
+        FP = np.sum((y_pred == 2) & (y_test == 4))
+        FN = np.sum((y_pred == 4) & (y_test == 2))
+        return np.array([[TN, FP], [FN, TP]])
+
 class HoldOut(ValidationStrategy):
     def __init__(self, dim_test_set: float):
         self.dim_test_set = dim_test_set
 
-    def split(self, X: pd.DataFrame, y: pd.DataFrame):
+    def split(self, X: pd.DataFrame, y: pd.DataFrame)-> tuple:
         """
         Questo metodo divide il dataset in Training Set e Test Set usando il metodo Holdout.
 
@@ -71,34 +80,30 @@ class HoldOut(ValidationStrategy):
 
         return x_train, x_test, y_train, y_test
 
-    def evaluate(self, knn: KNN, X: pd.DataFrame, y: pd.DataFrame):
+    def evaluate(self, knn: KNN, X: pd.DataFrame, y: pd.DataFrame, metrica: int) -> tuple:
         """Valuta il modello KNN con il metodo Holdout."""
         x_train, x_test, y_train, y_test = self.split(X, y)
 
-        y_pred = knn.predici(x_test, x_train, y_train)
-        y_pred = np.array(y_pred, dtype=int)
+        y_pred = knn.predici(x_test, x_train, y_train) # Predizione
+        y_pred = np.array(y_pred, dtype=int) # Conversione per evitare problemi di confronto
+        y_scores = knn.calcola_scores(x_test, x_train, y_train) # Calcolo dei punteggi di malignità
         y_test = y_test.values.ravel().astype(int)
 
-        TP = np.sum((y_pred == 2) & (y_test == 2))  
-        TN = np.sum((y_pred == 4) & (y_test == 4))
-        FP = np.sum((y_pred == 2) & (y_test == 4))
-        FN = np.sum((y_pred == 4) & (y_test == 2))
-
-        accuracy = np.sum(y_pred == y_test) / len(y_test)
-        error = 1 - accuracy  
-        sensitivity = TP / np.sum(y_test == 2)
-        specificity = TN / np.sum(y_test == 4)
-        geometric_mean = np.sqrt(sensitivity * specificity)
-        confusion_matrix = np.array([[TN, FP], [FN, TP]])
-
-        return accuracy, error, sensitivity, specificity, geometric_mean, confusion_matrix
-
+        confusion_matrix = self.compute_confusion_matrix(y_test, y_pred)
+        if metrica == 6:
+            result = MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn)
+        elif metrica == 7:
+            result = MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn=knn)
+        else:
+            result = MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred)
+        return result, confusion_matrix
+    
 class KfoldCrossValidationKNN(ValidationStrategy):
     def __init__(self, K: int):
         """ Costruttore della classe """
         self.K = K  # Numero di fold
 
-    def split(self, X: pd.DataFrame):
+    def split(self, X: pd.DataFrame, y: pd.DataFrame) -> list:
         """Metodo che divide e restituisce gli indici del dataset in K fold."""
         indices = np.arange(len(X)) # Array di indici
         fold_size = len(X) // self.K # Dimensione di ogni fold
@@ -111,21 +116,17 @@ class KfoldCrossValidationKNN(ValidationStrategy):
 
         return folds
 
-    def evaluate(self, knn: KNN, X: pd.DataFrame, y:pd.DataFrame):
+    def evaluate(self, knn: KNN, X: pd.DataFrame, y:pd.DataFrame, metrica: int)-> tuple:
         """Valuta il modello KNN con la validazione K-Fold."""
         
         # Verifico che K sia un valore valido:
         if self.K < 1:
             raise ValueError("Errore: K deve essere un valore intero positivo.")
         
-        folds = self.split(X)
+        folds = self.split(X, y)
 
-        accuracy = np.zeros(self.K)
-        error = np.zeros(self.K)
-        sensitivity = np.zeros(self.K)
-        specificity = np.zeros(self.K)
-        geometric_mean = np.zeros(self.K)
-        confusion_matrix = np.zeros((self.K, 2, 2))
+        results = []
+        confusion_matrices = []
 
         for i in range(self.K):
             train_indices, test_indices = folds[i]
@@ -133,36 +134,45 @@ class KfoldCrossValidationKNN(ValidationStrategy):
             X_test, y_test = X.iloc[test_indices], y.iloc[test_indices]
 
             y_pred = knn.predici(X_test, X_train, y_train) 
+            y_scores = knn.calcola_scores(X_test, X_train, y_train) # Calcolo dei punteggi di malignità
 
             # Conversione per evitare problemi di confronto
             y_pred = np.array(y_pred, dtype=int)
             y_test = y_test.values.ravel().astype(int)  
 
-            TP = np.sum((y_pred == 2) & (y_test == 2))
-            TN = np.sum((y_pred == 4) & (y_test == 4))
-            FP = np.sum((y_pred == 2) & (y_test == 4))
-            FN = np.sum((y_pred == 4) & (y_test == 2))
+            # Calcolo della Matrice di Confusione:
+            confusion_matrices.append(self.compute_confusion_matrix(y_test, y_pred))
 
-            accuracy[i] = np.sum(y_pred == y_test) / len(y_test)
-            error[i] = 1 - accuracy[i]  
-            sensitivity[i] = TP / np.sum(y_test == 2) if np.sum(y_test == 2) > 0 else 0
-            specificity[i] = TN / np.sum(y_test == 4) if np.sum(y_test == 4) > 0 else 0
-            geometric_mean[i] = np.sqrt(sensitivity[i] * specificity[i]) if sensitivity[i] * specificity[i] > 0 else 0
-            confusion_matrix[i] = np.array([[TN, FP], [FN, TP]])
-
-        model_accuracy = np.mean(accuracy)
-        model_error = np.mean(error)
-        model_sensitivity = np.mean(sensitivity)
-        model_specificity = np.mean(specificity)
-        model_geometric_mean = np.mean(geometric_mean)
-
-        return model_accuracy, model_error, model_sensitivity, model_specificity, model_geometric_mean, confusion_matrix
+            # Calcolo delle metriche richieste
+            if metrica == 6:
+                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn))
+            elif metrica == 7:
+                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn=knn))
+            else:
+                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred))
+        
+        # Calcolo della media delle metriche nel caso in cui vengano richieste tutte le metriche e non
+        if metrica == 7:
+            results_mean = []
+            for i in range(len(results[0])):
+                results_mean.append(np.mean([results[j][i] for j in range(self.K)]))
+            return results_mean, confusion_matrices
+        else:
+            return np.mean(results), confusion_matrices
     
     
 class RandomSubsampling(ValidationStrategy):
-    
+
     def __init__(self, K:int, dim_test_set: float):
         """ Costruttore della classe """
+        # Verifico che K sia un valore valido:
+        if K < 1:
+            raise ValueError("Errore: K deve essere un valore intero positivo.")
+        
+        # Verifico che dim_test_set sia valido:
+        if not (0 < dim_test_set < 1):
+            raise ValueError("Errore: dim_test_set deve essere un valore tra 0 e 1.")
+        
         self.K = K # Numero di iterazioni per il subsampling
         self.dim_test_set = dim_test_set # Percentuale di dati da usare per il test set
         
@@ -187,14 +197,6 @@ class RandomSubsampling(ValidationStrategy):
         risultati_iterazioni: 
             Lista contenente K tuple (X_train, y_train, X_test, y_test).
         """
-        # Verifico che dim_test_set sia valido:
-        if not (0 < self.dim_test_set < 1):
-            raise ValueError("Errore: dim_test_set deve essere un valore tra 0 e 1.")
-        
-        # Verifico che K sia un valore valido:
-        if self.K < 1:
-            raise ValueError("Errore: K deve essere un valore intero positivo.")
-
         # Lista per salvare i risultati di ogni iterazione
         risultati_iterazioni = []
 
@@ -224,19 +226,15 @@ class RandomSubsampling(ValidationStrategy):
         print("\nRandom Subsampling completato!")
         return risultati_iterazioni
     
-    def evaluate(self, knn: KNN, X: pd.DataFrame, y: pd.DataFrame):
+    def evaluate(self, knn: KNN, X: pd.DataFrame, y: pd.DataFrame, metrica: int)-> tuple:
         """ Metodo che valuta il modello in cui è stato utilizzato Random Subsampling """
         
         # Chiamo il metodo random_subsampling():
         risultati_iterazioni = self.split(X, y) # lista di tuple (X_train, y_train, X_test, y_test)
     
         # Inizializzo le metriche:
-        accuracy_totale = 0
-        error_rate_totale = 0
-        sensitivity_totale = 0
-        specificity_totale = 0
-        geometric_mean_totale = 0
-        confusion_matrix_iterazione = []
+        results = []
+        confusion_matrices = []
 
         for X_train, y_train, X_test, y_test in risultati_iterazioni:
             y_pred = knn.predici(X_test, X_train, y_train)  # Uso il metodo di KNN
@@ -244,35 +242,24 @@ class RandomSubsampling(ValidationStrategy):
             # Conversione 
             y_pred = np.array(y_pred, dtype=int)
             y_test = y_test.values.ravel().astype(int)
+            y_scores = knn.calcola_scores(X_test, X_train, y_train) # Calcolo dei punteggi di malignità
     
             # Calcolo della Matrice di Confusione:
-            TP = np.sum((y_pred == 2) & (y_test == 2))  # Veri Positivi (benigni correttamente classificati)
-            TN = np.sum((y_pred == 4) & (y_test == 4))  # Veri Negativi (maligni correttamente classificati)
-            FP = np.sum((y_pred == 2) & (y_test == 4))  # Falsi Positivi (maligni ma in realtà benigni)
-            FN = np.sum((y_pred == 4) & (y_test == 2))  # Falsi Negativi (benigni ma in realtà maligni)
-    
-            # Calcolo delle altre metriche:
-            accuracy = np.sum(y_pred == y_test) / len(y_test)  
-            error_rate = 1 - accuracy  
-            sensitivity = TP / np.sum(y_test == 2) if np.sum(y_test == 2) > 0 else 0  
-            specificity = TN / np.sum(y_test == 4) if np.sum(y_test == 4) > 0 else 0  
-            geometric_mean = np.sqrt(sensitivity * specificity) if (sensitivity * specificity) > 0 else 0  
-    
-            # Aggiorno le metriche per il calcolo della media
-            accuracy_totale += accuracy
-            error_rate_totale += error_rate
-            sensitivity_totale += sensitivity
-            specificity_totale += specificity
-            geometric_mean_totale += geometric_mean
-    
-            # Aggiorno la Matrice di Confusione Totale
-            confusion_matrix_iterazione.append(np.array([[TN, FP], [FN, TP]]))  # Matrice per questa iterazione
-    
-        # Calcolo la media delle metriche su tutte le iterazioni
-        accuracy_media = accuracy_totale / self.K
-        error_rate_media = error_rate_totale / self.K
-        sensitivity_media = sensitivity_totale / self.K
-        specificity_media = specificity_totale / self.K
-        geometric_mean_media = geometric_mean_totale / self.K
-    
-        return accuracy_media, error_rate_media, sensitivity_media, specificity_media, geometric_mean_media, confusion_matrix_iterazione
+            confusion_matrices.append(self.compute_confusion_matrix(y_test, y_pred))
+
+           # Calcolo delle metriche richieste 
+            if metrica == 6:
+                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn))
+            elif metrica == 7:
+                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn=knn))
+            else:
+                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred))
+
+        # Calcolo della media delle metriche nel caso in cui vengano richieste tutte le metriche e non
+        if metrica == 7:
+            results_mean = []
+            for i in range(len(results[0])):
+                results_mean.append(np.mean([results[j][i] for j in range(self.K)]))
+            return results_mean, confusion_matrices
+        else:
+            return np.mean(results), confusion_matrices

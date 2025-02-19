@@ -1,10 +1,7 @@
 from DataPreprocessing import PreprocessingDataset
 from knn import KNN
-from ValidationStrategies import ValidationFactory 
+from ValidationStrategies import ValidationFactory
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import Workbook 
 import seaborn as sns
 
 if __name__ == "__main__":
@@ -39,6 +36,27 @@ if __name__ == "__main__":
             "3. Random Subsampling\n"
     ))
 
+    metrica = int(input(
+            "Scegliere la metrica (digitando '1', '2', '3', '4', '5', '6' o '7') che si vuole calcolare per valutare il modello:\n"
+            "1. Accuracy\n"
+            "2. Error\n"
+            "3. Sensitivity\n"
+            "4. Specificity\n"
+            "5. Geometric Mean\n"
+            "6. AUC\n"
+            "7. Tutte le metriche\n"
+            ))
+   
+    metriche = {
+        1: "Accuracy",
+        2: "Error",
+        3: "Sensitivity",
+        4: "Specificity",
+        5: "Geometric Mean",
+        6: "AUC",
+        7: "AllMetrics"
+    }
+
     # Creazione del metodo di validazione
     if metodo == 1:
         dim_test_set = float(input("Inserire la dimensione del test set (in percentuale): "))
@@ -54,18 +72,24 @@ if __name__ == "__main__":
         raise ValueError("Metodo non valido!")
 
     # Valutazione del modello
-    results = validation_method.evaluate(knn, x_normalizzato, y)
+    results = validation_method.evaluate(knn, x_normalizzato, y, metrica)
 
-    print("\nRisultati della valutazione del modello:")
-    print("Accuracy: ", results[0]*100, "%")
-    print("Error: ", results[1]*100, "%")
-    print("Sensitivity: ", results[2]*100, "%")
-    print("Specificity: ", results[3]*100, "%")
-    print("Geometric Mean: ", results[4]*100, "%")
-    
-    # Gestione della confusion matrix in base al metodo di validazione
-    confusion_matrix_values = np.array(results[5], dtype = int)
-    if metodo == 1:
+    # Stampa dei risultati
+    print("\nRisultati:")
+    if metrica == 7:
+        print(f"Accuracy: {results[0][0]*100}%")
+        print(f"Error: {results[0][1]*100}%")
+        print(f"Sensitivity: {results[0][2]*100}%")
+        print(f"Specificity: {results[0][3]*100}%")
+        print(f"Geometric Mean: {results[0][4]*100}%")
+        print(f"AUC: {results[0][5]*100}%")
+        confusion_matrix_values = results[1]
+    else:
+        print(f"{metriche[metrica]}: {results[0]*100}%")
+        confusion_matrix_values = results[1]
+
+    # Stampa della/e confusion matrix
+    if metodo == 1: # Holdout
         print("\nConfusion Matrix - Holdout:\n", confusion_matrix_values)
         plt.figure(figsize=(6,4))
         sns.heatmap(confusion_matrix_values, annot=True, fmt='d', cmap='Reds', xticklabels=["Neg", "Pos"], yticklabels=["Neg", "Pos"])
