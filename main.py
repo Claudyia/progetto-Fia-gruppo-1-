@@ -1,61 +1,20 @@
-from DataPreprocessing import PreprocessingDataset
+from input_output import get_input_parameters, elabora_dataset, save_to_excel
 from knn import KNN
 from ValidationStrategies import ValidationFactory
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 if __name__ == "__main__":
+    
     # Creiamo un'istanza della classe"
-    preprocessing = PreprocessingDataset()
-    # Carico dataset
-    dataset_caricato = preprocessing.carica_dataset( )
-    
-    # Pulisco il dataset
-    X, y = preprocessing.pulisci_dataset()
-    
-    # Normalizzo le features
-    x_normalizzato = preprocessing.normalizza_features()
-
-    if len(x_normalizzato) != len(y):
-        raise ValueError("Errore: il numero di righe delle features e del target non coincide!")
-    else:
-        print("\nIl numero di righe delle features e del target coincide!\n")
-
-    if len(x_normalizzato) == 0:
-        raise ValueError("Errore: il numero di righe delle features è zero!")
-    else:
-        print("\nIl numero di righe delle features è maggiore di zero!\n")
-
-    k = int(input("Inserire il valore di k: "))
-    knn = KNN(k)
-
-    metodo = int(input(
-            "Scegliere il metodo (digitando '1', '2' o '3') che si vuole usare per la KNN:\n"
-            "1. Holdout\n"
-            "2. K-fold Cross Validation\n"
-            "3. Random Subsampling\n"
-    ))
-
-    metrica = int(input(
-            "Scegliere la metrica (digitando '1', '2', '3', '4', '5', '6' o '7') che si vuole calcolare per valutare il modello:\n"
-            "1. Accuracy\n"
-            "2. Error\n"
-            "3. Sensitivity\n"
-            "4. Specificity\n"
-            "5. Geometric Mean\n"
-            "6. AUC\n"
-            "7. Tutte le metriche\n"
-            ))
    
-    metriche = {
-        1: "Accuracy",
-        2: "Error",
-        3: "Sensitivity",
-        4: "Specificity",
-        5: "Geometric Mean",
-        6: "AUC",
-        7: "AllMetrics"
-    }
+    x_normalizzato, y = elabora_dataset()
+
+    # Ottengo i valori di k, metodo, metrica e metriche
+    k, metodo, metrica, metriche = get_input_parameters()
+
+    # Creazione del classificatore KNN
+    knn = KNN(k)
 
     # Creazione del metodo di validazione
     if metodo == 1:
@@ -74,23 +33,11 @@ if __name__ == "__main__":
     # Valutazione del modello
     results = validation_method.evaluate(knn, x_normalizzato, y, metrica)
 
-    # Stampa dei risultati
-    print("\nRisultati:")
-    if metrica == 7:
-        print(f"Accuracy: {results[0][0]*100}%")
-        print(f"Error: {results[0][1]*100}%")
-        print(f"Sensitivity: {results[0][2]*100}%")
-        print(f"Specificity: {results[0][3]*100}%")
-        print(f"Geometric Mean: {results[0][4]*100}%")
-        print(f"AUC: {results[0][5]*100}%")
-        confusion_matrix_values = results[1]
-    else:
-        print(f"{metriche[metrica]}: {results[0]*100}%")
-        confusion_matrix_values = results[1]
-
     # Stampa della/e confusion matrix
+    confusion_matrix_values = results[1]
     if metodo == 1: # Holdout
-        print("\nConfusion Matrix - Holdout:\n", confusion_matrix_values)
+        print("\nMatrice di Confusione:", confusion_matrix_values)
+        print("\nSalvare il grafico se necessario e chiudere la finestra per proseguire")
         plt.figure(figsize=(6,4))
         sns.heatmap(confusion_matrix_values, annot=True, fmt='d', cmap='Reds', xticklabels=["Neg", "Pos"], yticklabels=["Neg", "Pos"])
         plt.xlabel("Predetto")
@@ -99,12 +46,44 @@ if __name__ == "__main__":
         plt.show()
 
     elif metodo in [2, 3]:  # K-Fold o Random Subsampling
-        print("\nConfusion Matrices:")
+        print("\nMatrici di Confusione:")
         for i, cm in enumerate(confusion_matrix_values):
-            print(f"Iteration {i + 1}:\n{cm}")
+            print(f"Iterazione {i + 1}:\n{cm}\n"
+                  "salvare il grafico se necessario e chiudere la finestra per visualizzare la matrice di confusione successiva.")
             plt.figure(figsize=(6,4))
             sns.heatmap(cm, annot=True, fmt='d', cmap='Reds', xticklabels=["Neg", "Pos"], yticklabels=["Neg", "Pos"])
             plt.xlabel("Predetto")
             plt.ylabel("Reale")
             plt.title("Matrice di Confusione")
-        plt.show()
+            plt.show()
+
+# Stampa della curva ROC
+    roc_data = results[2]
+    if metodo in [2, 3]:
+        for i, roc in enumerate(roc_data):
+            print(f"\nROC Curve - Esperimento {i + 1}:\n"
+                  "Salvare il grafico se necessario e chiudere la finestra per preseguire.")
+            knn.plot_ROC_Curve(roc[0], roc[1])
+    else:
+        print("\nROC Curve:\n")
+        print("Salvare il grafico se necessario e chiudere la finestra per proseguire.\n")
+        knn.plot_ROC_Curve(roc_data[0], roc_data[1])
+
+    # Stampa dei risultati
+    print("\nRisultati Finali:")
+    if metrica == 7:
+        print(f"Accuracy: {results[0][0]*100}%")
+        print(f"Error: {results[0][1]*100}%")
+        print(f"Sensitivity: {results[0][2]*100}%")
+        print(f"Specificity: {results[0][3]*100}%")
+        print(f"Geometric Mean: {results[0][4]*100}%")
+        print(f"AUC: {results[0][5]*100}%")
+    else:
+        print(f"{metriche[metrica]}: {results[0]*100}%")
+
+    # Salvataggio dei risultati in un file Excel
+    filename = input("Inserire il nome del file Excel (senza o con estensione .xlsx) in cui salvare i risultati e la/e matrice/i di confusione: ").strip()
+    if not filename.endswith(".xlsx"):
+        filename += ".xlsx"
+    save_to_excel(results, metriche, metrica, metodo, filename)
+    print("\nFine del programma.")
