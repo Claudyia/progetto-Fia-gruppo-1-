@@ -2,7 +2,18 @@
 import pandas as pd
 
 class PreprocessingDataset:
+    """
+    Classe per la gestione del preprocessing dei dati. 
+    Contiene metodi per:
+    1) Caricare un dataset CSV.
+    2) Pulire i dati (gestione valori mancanti, conversioni, rimozione duplicati).
+    3) Separare features (x) e target (y).
+    4) Normalizzare le features per migliorare la performance del modello.
+    """
     def __init__(self):
+        """
+        Inizializzo la classe con dataset, features (x) e target (y) impostati a None.
+        """
         self.dataset = None
         self.x = None
         self.y = None
@@ -13,23 +24,25 @@ class PreprocessingDataset:
         un messaggio che specifica se il caricamento del dataset è avvenuto con 
         successo o meno.
         '''
+        # Chiedo all'utente di inserire il percorso del dataset CSV
         file_path = input("Inserisci il path del dataset CSV:\n")
-        file_path = file_path.strip("'").strip('"')
+        file_path = file_path.strip("'").strip('"') #Rimuove eventuali apici del path
+        
         try:
-            self.dataset = pd.read_csv(file_path)
+            self.dataset = pd.read_csv(file_path) #Carico il dataset
             print("\nDataset caricato con successo!\n")
         except Exception as e:
-            print(f"\nErrore nel caricamento del file: {e}\n")
+            print(f"\nErrore nel caricamento del file: {e}\n") #gestisco eventuale eccezione
         
     def pulisci_dataset(self) -> tuple:
         '''
         Questo metodo pulisce il dataset in questo modo:
-        1) Converte i valori numerici in formato stringa in formato numerico.
-            I valori non numerici vengono trasformati in NaN (Not a Number).
-        2) Rimuove righe NaN in y e le corrispondenti in X.
-        3) Rimuove eventuali righe duplicate.
-        4) Separazione delle feature (X) e del target (y).
-        5) Sostituisce i valori mancanti (NaN) con la media della colonna per le feature.
+        1) Converte i valori stringa in numerici.
+           I non convertibili (es. spazi vuoti) diventano NaN, ovvero not a number.
+        2) Separazione delle feature (x) e del target (y).
+        3) Sostituisce i valori (NaN) nelle features con la media della colonna.
+        4) Rimuove eventuali righe duplicate.
+        5) Rimuove le righe con valori NaN nella colonna target (`classtype_v1`) e le corrispondenti in x.
         6) Stampa il numero di valori mancanti prima e dopo la pulizia.
         7) Restituisce feature e target puliti.
         
@@ -38,37 +51,38 @@ class PreprocessingDataset:
         tuple
             Una tupla contenente:
             - x: pd.DataFrame
-                DataFrame delle features.
+                DataFrame delle features pulite.
             - y: pd.DataFrame
-                DataFrame del target.
+                DataFrame del target pulito.
         '''
         if self.dataset is None:
             print("Errore: non è stato caricato nessun dataset da pulire!")
             return None
         
         # Punto 1: Conversione a numerico (trasforma stringhe in NaN se non convertibili)
-        # e stampa dei valori mancanti prima della pulizia.
         dataset_clean = self.dataset.apply(pd.to_numeric, errors='coerce')
+        
+        # Stampo il numero di valori NaN prima della pulizia
         print("\nValori mancanti prima della pulizia:")
         print(dataset_clean.isnull().sum())
         
-        # Punto 2: Separazione feature (X) e target (y)
+        # Punto 2: Separazione feature (x) e target (y)
         (self.x, self.y) = self.separa_features_e_target(dataset_clean)
         
-        # Punto 3: Sostituzione dei NaN nelle feature con la media della colonna
+        # Punto 3: Sostituzione dei NaN nelle features con la media della colonna
         self.x.fillna(self.x.mean(numeric_only=True), inplace=True)
         
         # Punto 4: Rimozione delle righe duplicate
         dataset_clean = pd.concat([self.x, self.y], axis=1).drop_duplicates()
         
-        # Punto 5: Rimozione delle righe con NaN in y
+        # Punto 5: Rimozione delle righe con NaN nel target y
         dataset_clean.dropna(subset=["classtype_v1"], inplace=True)
         
         # Punto 6: Stampo i valori mancanti dopo la pulizia
         print("\nValori mancanti dopo la pulizia:")
         print(dataset_clean.isnull().sum())
         
-        # Aggiorno self.x e self.y dopo la pulizia
+        # Aggiorno self.x e self.y dopo la pulizia:
         self.x = dataset_clean[self.x.columns]
         self.y = dataset_clean[self.y.columns]
         
@@ -76,18 +90,16 @@ class PreprocessingDataset:
 
     def separa_features_e_target(self, dataset_pulito: pd.DataFrame) -> tuple:
         '''
-        La funzione inizia definendo una lista di colonne chiamata features. 
-        Queste colonne rappresentano le features del dataset, ossia le variabili indipendenti 
-        che verranno utilizzate per fare una previsione (tumore benigno o maligno).
-        Successivamente viene definita la colonna che rappresenta il target 
-        (la variabile dipendente che vogliamo prevedere). Il target è la colonna "classtype_v1".
-        Successivamente la funzione controlla se le colonne "features" e "target" sono presenti nel dataset.
-        Infine vengono separati i feutures (x) e target (y).
+        Questo metodo separa le features (x) e il target (y) dal dataset in questo modo:
+            1) Definisce le colonne delle features (variabili indipendenti);
+            2) Definisce la colonna target `classtype_v1` (variabile dipendente);
+            3) Controlla che le colonne delle "features" e "target" esistano nel dataset;
+            4) Separa features (x) e target (y);
 
         Parameters
         ----------
         dataset_pulito: pd.DataFrame
-            Il dataset pulito da cui estrarre le features e il target.
+            Il dataset da cui estrarre le features e il target.
 
         Returns
         -------
@@ -98,21 +110,21 @@ class PreprocessingDataset:
             - y: pd.DataFrame
                 DataFrame del target.
         '''
-        # Definisco le colonne delle features
+        # Definisco le colonne delle features:
         features = [
             "clump_thickness_ty", "uniformity_cellsize_xx", "Uniformity of Cell Shape", 
             "Marginal Adhesion", "Single Epithelial Cell Size", "bareNucleix_wrong", 
             "Bland Chromatin", "Normal Nucleoli", "Mitoses"]
         
-        # Definisco la colonna target
+        # Definisco la colonna target:
         colonna_target = ["classtype_v1"]
 
-        # Controllo se le colonne esistono nel dataset
+        # Controllo se le colonne esistono nel dataset:
         for col in features + colonna_target:
             if col not in dataset_pulito.columns:
                 raise ValueError(f"Colonna '{col}' non trovata nel dataset!")
 
-        # Separo le x (features) e y (target)
+        # Separo le x (features) e y (target):
         x = dataset_pulito[features]
         y = dataset_pulito[colonna_target]
         
@@ -122,7 +134,7 @@ class PreprocessingDataset:
 
     def normalizza_features(self) -> pd.DataFrame:
         '''
-        Questa funzione normalizza le features utilizzando il metodo Min-Max Scaling,
+        Questo metodo normalizza le features utilizzando il metodo Min-Max Scaling,
         portando i valori delle features nell'intervallo [0,1].
         
         Returns
@@ -133,6 +145,8 @@ class PreprocessingDataset:
         if self.x is None:
             raise ValueError("Le features non sono state caricate correttamente.")
         
+        # Normalizzazione Min-Max: porta i valori tra 0 e 1
         x_normalized = (self.x - self.x.min()) / (self.x.max() - self.x.min())
+        
         print("\nFeatures normalizzate con Min-Max Scaling!\n")
         return x_normalized
