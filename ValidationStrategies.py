@@ -91,9 +91,11 @@ class HoldOut(ValidationStrategy):
 
         confusion_matrix = self.compute_confusion_matrix(y_test, y_pred)
         if metrica == 6:
-            result = MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn)
+            result, roc_data = MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn)
+            return result, confusion_matrix, roc_data
         elif metrica == 7:
-            result = MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn=knn)
+            result, roc_data = MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn=knn)
+            return result, confusion_matrix, roc_data
         else:
             result = MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred)
         return result, confusion_matrix
@@ -127,6 +129,7 @@ class KfoldCrossValidationKNN(ValidationStrategy):
 
         results = []
         confusion_matrices = []
+        roc_datas = []
 
         for i in range(self.K):
             train_indices, test_indices = folds[i]
@@ -145,9 +148,13 @@ class KfoldCrossValidationKNN(ValidationStrategy):
 
             # Calcolo delle metriche richieste
             if metrica == 6:
-                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn))
+                result, roc_data = MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn)
+                results.append(result)
+                roc_datas.append(roc_data)
             elif metrica == 7:
-                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn=knn))
+                result, roc_data = MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn = knn)
+                results.append(result)
+                roc_datas.append(roc_data)
             else:
                 results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred))
         
@@ -156,7 +163,9 @@ class KfoldCrossValidationKNN(ValidationStrategy):
             results_mean = []
             for i in range(len(results[0])):
                 results_mean.append(np.mean([results[j][i] for j in range(self.K)]))
-            return results_mean, confusion_matrices
+            return results_mean, confusion_matrices, roc_datas
+        elif metrica == 6:
+            return np.mean(results), confusion_matrices, roc_datas
         else:
             return np.mean(results), confusion_matrices
     
@@ -235,6 +244,7 @@ class RandomSubsampling(ValidationStrategy):
         # Inizializzo le metriche:
         results = []
         confusion_matrices = []
+        roc_datas = []
 
         for X_train, y_train, X_test, y_test in risultati_iterazioni:
             y_pred = knn.predici(X_test, X_train, y_train)  # Uso il metodo di KNN
@@ -249,9 +259,13 @@ class RandomSubsampling(ValidationStrategy):
 
            # Calcolo delle metriche richieste 
             if metrica == 6:
-                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn))
+                result, roc_data = MetricheFactory.create_metriche(metrica).calcola(y_test, y_scores, knn = knn)
+                results.append(result)
+                roc_datas.append(roc_data)
             elif metrica == 7:
-                results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn=knn))
+                result, roc_data = MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred, y_scores=y_scores, knn=knn)
+                results.append(result)
+                roc_datas.append(roc_data)
             else:
                 results.append(MetricheFactory.create_metriche(metrica).calcola(y_test, y_pred))
 
@@ -260,6 +274,8 @@ class RandomSubsampling(ValidationStrategy):
             results_mean = []
             for i in range(len(results[0])):
                 results_mean.append(np.mean([results[j][i] for j in range(self.K)]))
-            return results_mean, confusion_matrices
+            return results_mean, confusion_matrices, roc_datas
+        elif metrica == 6:
+            return np.mean(results), confusion_matrices, roc_datas
         else:
             return np.mean(results), confusion_matrices

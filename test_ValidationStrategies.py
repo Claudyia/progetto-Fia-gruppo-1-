@@ -36,11 +36,23 @@ class TestValidationStrategies(unittest.TestCase):
         Testa il metodo evaluate della classe HoldOut.
         """
         holdout = HoldOut(dim_test_set=0.2)
-        for metrica in range(1, 8):
+
+        # Testa il metodo evaluate per le prime 5 metriche
+        for metrica in range(1, 6):
             with self.subTest(metrica=metrica):
                 result, confusion_matrix = holdout.evaluate(self.knn, self.X, self.y, metrica=metrica)
                 self.assertIsNotNone(result)
                 self.assertEqual(confusion_matrix.shape, (2, 2))
+
+        # Testa il metodo evaluate per le ultime 2 metriche
+        for metrica in range(6, 8):
+            with self.subTest(metrica=metrica):
+                result, confusion_matrix, roc_data = holdout.evaluate(self.knn, self.X, self.y, metrica=metrica)
+                self.assertIsNotNone(result)
+                self.assertIsNotNone(confusion_matrix)
+                self.assertEqual(confusion_matrix.shape, (2, 2))
+                self.assertIsNotNone(roc_data)
+
 
     def test_kfold_split(self):
         """ Testa il metodo split della classe KfoldCrossValidationKNN."""
@@ -51,13 +63,31 @@ class TestValidationStrategies(unittest.TestCase):
             self.assertEqual(len(train_indices) + len(test_indices), 100)
 
     def test_kfold_evaluate(self):
-        """ Testa il metodo evaluate della classe KfoldCrossValidationKNN."""
-        kfold = KfoldCrossValidationKNN(K=5)
-        for metrica in range(1, 8):
+        """ Testa il metodo evaluate della classe RandomSubsampling."""
+        random_subsampling = KfoldCrossValidationKNN(K=5)
+
+        # Testa il metodo evaluate per le prime 5 metriche
+        for metrica in range(1, 6):
             with self.subTest(metrica=metrica):
-                result, confusion_matrices = kfold.evaluate(self.knn, self.X, self.y, metrica=metrica)
+                evaluation_result = random_subsampling.evaluate(self.knn, self.X, self.y, metrica=metrica)
+                self.assertIsNotNone(evaluation_result)
+                self.assertEqual(len(evaluation_result), 2, "Il metodo evaluate dovrebbe restituire esattamente 2 valori.")
+                result, confusion_matrices= evaluation_result
                 self.assertIsNotNone(result)
                 self.assertEqual(len(confusion_matrices), 5)
+                for cm in confusion_matrices:
+                    self.assertEqual(cm.shape, (2, 2))
+
+        # Testa il metodo evaluate per le ultime 2 metriche
+        for metrica in range(6, 8):
+            with self.subTest(metrica=metrica):
+                evaluation_result = random_subsampling.evaluate(self.knn, self.X, self.y, metrica=metrica)
+                self.assertIsNotNone(evaluation_result)
+                self.assertEqual(len(evaluation_result), 3, "Il metodo evaluate dovrebbe restituire esattamente 3 valori.")
+                result, confusion_matrices, roc_datas= evaluation_result
+                self.assertIsNotNone(result)
+                self.assertEqual(len(confusion_matrices), 5)
+                self.assertEqual(len(roc_datas), 5)
                 for cm in confusion_matrices:
                     self.assertEqual(cm.shape, (2, 2))
 
@@ -75,13 +105,32 @@ class TestValidationStrategies(unittest.TestCase):
     def test_random_subsampling_evaluate(self):
         """ Testa il metodo evaluate della classe RandomSubsampling."""
         random_subsampling = RandomSubsampling(K=5, dim_test_set=0.2)
-        for metrica in range(1, 8):
+        
+        # Testa il metodo evaluate per le prime 5 metriche
+        for metrica in range(1, 6):
             with self.subTest(metrica=metrica):
-                result, confusion_matrices = random_subsampling.evaluate(self.knn, self.X, self.y, metrica=metrica)
+                evaluation_result = random_subsampling.evaluate(self.knn, self.X, self.y, metrica=metrica)
+                self.assertIsNotNone(evaluation_result)
+                self.assertEqual(len(evaluation_result), 2, "Il metodo evaluate dovrebbe restituire esattamente 2 valori.")
+                result, confusion_matrices= evaluation_result
                 self.assertIsNotNone(result)
                 self.assertEqual(len(confusion_matrices), 5)
                 for cm in confusion_matrices:
                     self.assertEqual(cm.shape, (2, 2))
+        
+        # Testa il metodo evaluate per le ultime 2 metriche
+        for metrica in range(6, 8):
+            with self.subTest(metrica=metrica):
+                evaluation_result = random_subsampling.evaluate(self.knn, self.X, self.y, metrica=metrica)
+                self.assertIsNotNone(evaluation_result)
+                self.assertEqual(len(evaluation_result), 3, "Il metodo evaluate dovrebbe restituire esattamente 3 valori.")
+                result, confusion_matrices, roc_datas= evaluation_result
+                self.assertIsNotNone(result)
+                self.assertEqual(len(confusion_matrices), 5)
+                self.assertEqual(len(roc_datas), 5)
+                for cm in confusion_matrices:
+                    self.assertEqual(cm.shape, (2, 2))
+        
 
     def test_validation_factory_holdout(self):
         """ Testa la creazione del metodo HoldOut tramite ValidationFactory."""

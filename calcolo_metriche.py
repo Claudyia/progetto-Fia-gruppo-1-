@@ -71,8 +71,7 @@ class AUC(Metriche):
         """Metodo che calcola l'Area Under the Curve (AUC) della curva ROC, e disegna quest'ultima."""
         tprs, fprs = knn.ROC_curve(y_test, y_scores)
         auc = np.trapz(tprs, fprs)
-        knn.plot_ROC_Curve(tprs, fprs)
-        return auc
+        return auc, (tprs, fprs)
     
             
 class AllMetrics(Metriche):
@@ -83,7 +82,7 @@ class AllMetrics(Metriche):
         sensitivity = Sensitivity().calcola(y_test, y_pred)
         specificity = Specificity().calcola(y_test, y_pred)
         geometric_mean = GeometricMean().calcola(y_test, y_pred)
-        auc = AUC().calcola(y_test, y_scores, knn=knn) 
+        auc, roc_data = AUC().calcola(y_test, y_scores, knn=knn) 
         result = np.array([accuracy, error, sensitivity, specificity, geometric_mean, auc])
-        return result
+        return result, roc_data
     
