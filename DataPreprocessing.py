@@ -12,20 +12,15 @@ class PreprocessingDataset:
         Questo metodo permette di caricare il dataset CSV, mostrando in output
         un messaggio che specifica se il caricamento del dataset è avvenuto con 
         successo o meno.
-        
-        Returns
-        -------
-        dataset: Dataframe.
         '''
-        file_path = input("Inserisci il path del dataset CSV (senza apici):\n")
+        file_path = input("Inserisci il path del dataset CSV:\n")
+        file_path = file_path.strip("'").strip('"')
         try:
             self.dataset = pd.read_csv(file_path)
             print("\nDataset caricato con successo!\n")
         except Exception as e:
             print(f"\nErrore nel caricamento del file: {e}\n")
-            return None
-        return self.dataset
-
+        
     def pulisci_dataset(self) -> tuple:
         '''
         Questo metodo pulisce il dataset in questo modo:
