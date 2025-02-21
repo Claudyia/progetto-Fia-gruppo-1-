@@ -4,10 +4,31 @@ import pandas as pd
 from knn import KNN
 from calcolo_metriche import MetricheFactory
 
+
 class ValidationFactory:
-    """Factory per creare il metodo di validazione corretto."""
+    '''Questa classe implementa il design pattern Factory per selezionare
+    dinamicamente il metodo di validazione da utilizzare.'''
+    
     @staticmethod
     def create_validation_method(metodo, **kwargs):
+        '''
+        Questo metodo crea un oggetto della classe di validazione selezionata.
+
+        Parameters
+        ----------
+        - metodo: int
+            Valore numerico per scegliere il metodo di validazione:
+            1 → Holdout
+            2 → K-Fold Cross Validation
+            3 → Random Subsampling
+
+        - kwargs: dict
+            Parametri specifici per il metodo di validazione selezionato.
+
+        Returns
+        -------
+        - Un'istanza della classe corrispondente al metodo di validazione scelto.
+        '''
         if metodo == 1:
             return HoldOut(**kwargs)
         elif metodo == 2:
@@ -18,18 +39,39 @@ class ValidationFactory:
             raise ValueError("Metodo di validazione non implementato!")
             
 class ValidationStrategy(ABC):
-    """Classe astratta per strategie di validazione."""
+    """Classe astratta che definisce l'interfaccia (i metodi) che devono avere  
+    tutte le strategie di validazione."""
 
     @abstractmethod
     def split(self, X, y):
+        """Suddivide il dataset in training e test secondo il metodo specificato.
+        (Viene implementato nelle sottoclassi)"""
         pass
 
     @abstractmethod
     def evaluate(self, knn: KNN, X, y):
+        """
+        Valuta il modello k-NN utilizzando il metodo di validazione selezionato.
+        (Viene implementato nelle sottoclassi)
+        """
         pass
 
     def compute_confusion_matrix(self, y_test, y_pred) -> np.ndarray:
-        """Calcola la Matrice di Confusione."""
+        """
+        Calcola la matrice di confusione per valutare le performance del modello.
+
+        Parameters
+        ----------
+        - y_test: np.array
+            Valori reali delle classi nel test set.
+        - y_pred: np.array
+            Valori predetti dal modello k-NN.
+
+        Returns
+        -------
+        - Matrice 2x2 con i valori di True Positives (TP), True Negatives (TN),
+          False Positives (FP) e False Negatives (FN).
+        """
         TP = np.sum((y_pred == 2) & (y_test == 2))
         TN = np.sum((y_pred == 4) & (y_test == 4))
         FP = np.sum((y_pred == 2) & (y_test == 4))
@@ -37,7 +79,18 @@ class ValidationStrategy(ABC):
         return np.array([[TN, FP], [FN, TP]])
 
 class HoldOut(ValidationStrategy):
+    """
+    Implementazione della strategia di validazione Holdout.
+    
+    Il dataset viene suddiviso in training set e test set in base alla proporzione specificata.
+    """
     def __init__(self, dim_test_set: float):
+        '''
+        Parameters
+        ----------
+        dim_test_set : float
+            Percentuale di dati da assegnare al test set (valore compreso tra 0 e 1).
+        '''
         self.dim_test_set = dim_test_set
 
     def split(self, X: pd.DataFrame, y: pd.DataFrame)-> tuple:
@@ -101,12 +154,32 @@ class HoldOut(ValidationStrategy):
         return result, confusion_matrix
     
 class KfoldCrossValidationKNN(ValidationStrategy):
+    """
+    Implementazione della strategia di validazione K-Fold Cross Validation.
+    
+    Il dataset viene suddiviso in K sottoinsiemi (folds). Ogni fold viene utilizzato
+    come test set una volta, mentre i rimanenti K-1 fold vengono utilizzati per il training.
+    """
     def __init__(self, K: int):
         """ Costruttore della classe """
         self.K = K  # Numero di fold
 
     def split(self, X: pd.DataFrame, y: pd.DataFrame) -> list:
-        """Metodo che divide e restituisce gli indici del dataset in K fold."""
+        """
+        Divide il dataset in K fold per la validazione incrociata.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            DataFrame contenente le feature normalizzate.
+        y : pd.DataFrame
+            DataFrame contenente le etichette target.
+
+        Returns
+        -------
+        list
+            Lista di tuple contenenti gli indici di training e test per ciascun fold.
+        """
         indices = np.arange(len(X)) # Array di indici
         fold_size = len(X) // self.K # Dimensione di ogni fold
         folds = []
@@ -171,6 +244,13 @@ class KfoldCrossValidationKNN(ValidationStrategy):
     
     
 class RandomSubsampling(ValidationStrategy):
+    """
+    Implementazione della strategia di validazione Random Subsampling.
+
+    Il dataset viene suddiviso casualmente in training set e test set per K iterazioni.
+    In ogni iterazione, il modello viene addestrato su un sottoinsieme diverso dei dati 
+    e testato su un altro sottoinsieme.
+    """
 
     def __init__(self, K:int, dim_test_set: float):
         """ Costruttore della classe """
