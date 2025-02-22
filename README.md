@@ -11,7 +11,14 @@ Questo progetto implementa un classificatore k-Nearest Neighbors (k-NN) con dive
 
 Prima di eseguire il progetto, assicurarsi di avere installati i seguenti pacchetti:
 
-- pip install numpy pandas matplotlib seaborn openpyxl xlsxwriter collections
+- `numpy`
+- `pandas`
+- `matplotlib`
+- `seaborn`
+- `xlsxwriter`
+
+Possono essere tutti installati eseguendo il seguente comando sul terminale:
+pip install numpy pandas matplotlib seaborn xlsxwriter
 
 # Esecuzione
 
@@ -21,32 +28,32 @@ Prima di eseguire il progetto, assicurarsi di avere installati i seguenti pacche
 
 -Valore di k per il classificatore k-NN.
 
--Metodo di validazione: Holdout, K-Fold, o Random Subsampling.
+-Numero identificativo per il metodo di split del dataset desiderato: Holdout, K-Fold, o Random Subsampling.
 
--Numero di Fold (K-Fold) o interazioni(Random Subsampling).
+-Dimensione percentuale del Test Set (Holdout o Random Subsampling), Numero di Fold (K-Fold) o numero di esperimenti(Random Subsampling).
 
+-Selezione della modalità di valutazione desiderata (Accuracy, Error, Sensitivity, Specificity, Geometric Mean, AUC, Tutte le Metriche).
 
--Scelta della metrica di valutazione (Accuracy, Sensitivity, AUC, ecc.).
+Il modello eseguirà la classificazione e mostrerà i risultati, inclusa la matrice di confusione e la curva ROC per ogni esperimento (salvare, se necessario, i grafici quando vengono mostrati).
 
-Il modello eseguirà la classificazione e mostrerà i risultati, inclusa la matrice di confusione e la curva ROC.
-
--Salvare i risultati in un file Excel specificando il nome del file quando richiesto.
+-Alla fine del programma, sono salvati i risultati in un file Excel di cui si può specificare il nome quando richiesto.
 
 # Test
 
-Per verificare la correttezza delle metriche implementate, eseguire i test unitari con il comando:
+Per verificare la correttezza delle classi e delle funzioni implementate, eseguire i test unitari con il comando:
 
 - python -m unittest 
 
 # Risultati
-	•	Holdout: Viene generata una matrice di confusione e una curva ROC per l’iterazione di validazione, in base al numero k di vicini scelto dall’utente.
-	•	K-Fold: Vengono stampate tante matrici di confusione e curve ROC quanti sono i fold specificati. L’utente dovrà fornire sia il valore di k (numero di vicini) che il numero di fold da utilizzare.
-	•	Random Subsampling: Per ogni iterazione, vengono stampate la matrice di confusione e la curva ROC. L’utente fornirà il valore di k e il numero di iterazioni desiderato.
-	•	Salvataggio: I risultati finali, incluse tutte le matrici di confusione e le curve ROC, verranno salvati in un file Excel per un’ulteriore analisi.
+	•	Holdout: Viene generata una matrice di confusione e una curva ROC per il singolo esperimento.
+	•	K-Fold: Vengono stampate tante matrici di confusione e curve ROC quanti sono i fold specificati. 
+	•	Random Subsampling: Per ogni iterazione, vengono stampate la matrice di confusione e la curva ROC. 
+	•	Salvataggio: I risultati finali riguardanti le metrica scelta (o tutte le metriche), incluse tutte le matrici di confusione, oltre ad essere stampati sul terminale, verranno salvati in un file Excel apposito; 
+ 		le curve ROC generate andrebbero, invece, salvate manualmente se necessario.
 
 # Note
 
-Durante l'esecuzione, chiudere ogni finestra grafica prima di procedere alla visualizzazione della successiva.
+Durante l'esecuzione, chiudere ogni finestra grafica prima di procedere alla visualizzazione della successiva e infine giungere al salvataggio dei risultati finali.
 
 
 # ESEMPI  DI OUTPUT
