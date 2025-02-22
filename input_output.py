@@ -1,17 +1,28 @@
 from DataPreprocessing import PreprocessingDataset
 import pandas as pd
 
-def get_input_parameters():
-    """Ottiene i valori di k, metodo, metrica e metriche come input dell'utente e 
-    li ritorna al programma principale."""
+def get_input_parameters() -> tuple:
+    """
+    Questa funzione chiede all'utente di inserire i seguenti parametri: 
+
+    - il valore di k
+    - Il metodo di validazione (Holdout, K-Fold, Random Subsampling)
+    - La metrica di valutazione
+
+    Returns
+    -------
+    tuple
+    """
 
     k = int(input("Inserire il valore di k: "))
+    
     metodo = int(input(
         "Scegliere il metodo (digitando '1', '2' o '3') che si vuole usare per la KNN:\n"
         "1. Holdout\n"
         "2. K-fold Cross Validation\n"
         "3. Random Subsampling\n"
     ))
+    
     metrica = int(input(
         "Scegliere la metrica (digitando '1', '2', '3', '4', '5', '6' o '7') che si vuole calcolare per valutare il modello:\n"
         "1. Accuracy\n"
@@ -30,13 +41,16 @@ def get_input_parameters():
     4: "Specificity",
     5: "Geometric Mean",
     6: "AUC",
-    7: "AllMetrics"
-}
+    7: "AllMetrics"}
+    
     return k, metodo, metrica, metriche
 
     
 def elabora_dataset() -> tuple:
-    """Carica il dataset, lo pulisce e normalizza le features. Restituisce una tupla contenenente le features normalizzate e la colonna delle labels."""
+    """
+    Carica il dataset, lo pulisce e normalizza le features. 
+    Restituisce una tupla contenenente le features normalizzate e la colonna delle labels.
+    """
 
     preprocessing = PreprocessingDataset()
     # Carica dataset
@@ -60,18 +74,31 @@ def elabora_dataset() -> tuple:
 
     return x_normalizzato, y
 
-import pandas as pd
+
 
 def save_to_excel(results, metriche, metrica, metodo, filename):
     """
-    Salva i dati in un file Excel chiamato come filename.
-    
-    :param results: i dati da salvare
-    :param filename: il nome del file in cui salvare i 
-    :param metriche: il dizionario delle metriche
-    :param metrica: la metrica scelta da salvare
-    :param metodo: il metodo di validazione scelto
+    Questa funzione salva i risultati delle metriche di valutazione e 
+    le matrici di confusione in un file Excel.
+
+    Parameters
+    ----------
+    results : tuple
+        Contiene i risultati delle metriche calcolate e le matrici di confusione.
+    metriche : dict
+        Dizionario che associa i numeri alle metriche disponibili.
+    metrica : int
+        Numero corrispondente alla metrica scelta.
+    metodo : int
+         Numero corrispondente al metodo di validazione utilizzato.
+    filename : str
+        Nome del file Excel in cui salvare i risultati.
+
+    Returns
+    -------
+    None
     """
+    
     results_data = {}
 
     if metrica == 7:
