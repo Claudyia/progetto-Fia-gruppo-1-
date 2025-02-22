@@ -34,7 +34,8 @@ pip install numpy pandas matplotlib seaborn xlsxwriter
 
 -Selezione della modalità di valutazione desiderata (Accuracy, Error, Sensitivity, Specificity, Geometric Mean, AUC, Tutte le Metriche).
 
-Il modello eseguirà la classificazione e mostrerà i risultati, inclusa la matrice di confusione e la curva ROC per ogni esperimento (salvare, se necessario, i grafici quando vengono mostrati).
+Il modello eseguirà la classificazione e mostrerà i risultati, inclusa la matrice di confusione e la curva ROC per ogni esperimento 
+(salvare, se necessario, i grafici quando vengono mostrati).
 
 -Alla fine del programma, sono salvati i risultati in un file Excel di cui si può specificare il nome quando richiesto.
 
@@ -48,8 +49,8 @@ Per verificare la correttezza delle classi e delle funzioni implementate, esegui
 	•	Holdout: Viene generata una matrice di confusione e una curva ROC per il singolo esperimento.
 	•	K-Fold: Vengono stampate tante matrici di confusione e curve ROC quanti sono i fold specificati. 
 	•	Random Subsampling: Per ogni iterazione, vengono stampate la matrice di confusione e la curva ROC. 
-	•	Salvataggio: I risultati finali riguardanti le metrica scelta (o tutte le metriche), incluse tutte le matrici di confusione, oltre ad essere stampati sul terminale, verranno salvati in un file Excel apposito; 
- 		le curve ROC generate andrebbero, invece, salvate manualmente se necessario.
+	•	Salvataggio: I risultati finali riguardanti le metrica scelta (o tutte le metriche), incluse tutte le matrici di confusione, 
+ 		oltre ad essere stampati sul terminale, verranno salvati in un file Excel apposito; le curve ROC generate andrebbero, invece, salvate manualmente se necessario.
 
 # Note
 
