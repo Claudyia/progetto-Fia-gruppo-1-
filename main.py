@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 if __name__ == "__main__":
-    
-    # Creiamo un'istanza della classe"
    
+    # Caricamento del dataset e normalizzazione delle feature
     x_normalizzato, y = elabora_dataset()
 
     # Ottengo i valori di k, metodo, metrica e metriche
